@@ -1,5 +1,12 @@
+import 'package:driweather/features/home/presentation/bloc/weather_realtime/weather_realtime_bloc.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+
 import '../../../../common/constants.dart';
 import '../../../../common/styles.dart';
+import '../../../../common/utils.dart';
+import '../../../core/injection.dart';
+import '../widgets/map_picker.dart';
 import '../widgets/weather_header_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -16,6 +23,37 @@ class WeatherPage extends StatefulWidget {
 }
 
 class WeatherPageState extends State<WeatherPage> {
+  final FlutterSecureStorage _storage = locator<FlutterSecureStorage>();
+  String _selectedAddress = "Surakarta";
+  double _selectedLat = -7.5666;
+  double _selectedLon = 110.8167;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSelectedAddress();
+  }
+
+  Future<void> _loadSelectedAddress() async {
+    String? address = await _storage.read(key: 'selected_address');
+    String? lat = await _storage.read(key: 'selected_lat');
+    String? lon = await _storage.read(key: 'selected_lon');
+
+    if (address != null && lat != null && lon != null) {
+      setState(() {
+        _selectedAddress = address;
+        _selectedLat = double.tryParse(lat) ?? _selectedLat;
+        _selectedLon = double.tryParse(lon) ?? _selectedLon;
+      });
+    } else {
+      setState(() {
+        _selectedAddress = "Pick Location";
+        _selectedLat = -7.5666;
+        _selectedLon = 110.8167;
+      });
+    }
+  }
+
   void _showNotificationBottomSheet(BuildContext context) {
     showModalBottomSheet(
       context: context,
@@ -86,96 +124,126 @@ class WeatherPageState extends State<WeatherPage> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                // Spacer(),
                 SafeArea(
                   child: WeatherHeaderWidget(
-                    cityName: "Jakarta",
-                    onLocationTap: () => {},
+                    cityName: _selectedAddress,
+                    onLocationTap: () async {
+                      final result = await Navigator.pushNamed(
+                          context, AppRoutes.mapPicker);
+
+                      if (result is MapPickerResult) {
+                        setState(() {
+                          _selectedAddress = result.address;
+                        });
+                      }
+                    },
                     onNotificationTap: () =>
                         _showNotificationBottomSheet(context),
                     hasNotification: true,
                   ),
                 ),
-                Image.asset(
-                  Images.cloudy,
-                  width: 240.w,
-                  fit: BoxFit.contain,
-                ),
-                Container(
-                  margin: EdgeInsets.symmetric(horizontal: 20),
-                  padding: EdgeInsets.symmetric(horizontal: 16, vertical: 20),
-                  decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.3),
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: whiteColor)),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      Text(
-                        'Today, 12 September',
-                        style: whiteTextStyle,
-                      ),
-                      SizedBox(height: 10),
-                      Text('29°',
-                          style: whiteTextStyle.copyWith(
-                              fontSize: 60.sp, fontWeight: FontWeight.w500)),
-                      SizedBox(height: 10),
-                      Text(
-                        'Cloudy',
-                        style: semiBoldStyle.copyWith(
-                            color: whiteColor, fontWeight: FontWeight.w700),
-                      ),
-                      SizedBox(height: 20),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Image.asset(
-                            Images.windIcon,
-                            width: 24.w,
-                            height: 24.h,
+                BlocProvider(
+                  create: (context) => locator<WeatherRealtimeBloc>()
+                    ..add(FetchWeatherRealtimeEvent(
+                        lat: _selectedLat, lon: _selectedLon)),
+                  child: BlocBuilder<WeatherRealtimeBloc, WeatherRealtimeState>(
+                    builder: (context, state) {
+                      if (state is WeatherRealtimeLoading) {
+                        return const Center(child: CircularProgressIndicator());
+                      } else if (state is WeatherRealtimeLoaded) {
+                        final weatherRealtimeData = state.weatherRealtime;
+
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            Image.asset(
+                              getWeatherIcon(weatherRealtimeData.weatherCode),
+                              width: 300.w,
+                              fit: BoxFit.contain,
+                            ),
+                            Container(
+                              margin: EdgeInsets.symmetric(horizontal: 20),
+                              padding: EdgeInsets.symmetric(
+                                  horizontal: 16, vertical: 20),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withValues(alpha: 0.3),
+                                borderRadius: BorderRadius.circular(10),
+                                border: Border.all(color: whiteColor),
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.center,
+                                children: [
+                                  Text(
+                                    DateFormatter.formatToReadableDate(
+                                        weatherRealtimeData.time),
+                                    style: whiteTextStyle,
+                                  ),
+                                  SizedBox(height: 10),
+                                  Text(
+                                    '${weatherRealtimeData.temperature}°',
+                                    style: whiteTextStyle.copyWith(
+                                        fontSize: 60.sp,
+                                        fontWeight: FontWeight.w500),
+                                  ),
+                                  SizedBox(height: 10),
+                                  Text(
+                                    getWeatherDescription(
+                                        weatherCode:
+                                            weatherRealtimeData.weatherCode),
+                                    style: semiBoldStyle.copyWith(
+                                        color: whiteColor,
+                                        fontWeight: FontWeight.w700),
+                                  ),
+                                  SizedBox(height: 20),
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Image.asset(
+                                        Images.windIcon,
+                                        width: 24.w,
+                                        height: 24.h,
+                                      ),
+                                      Text("Wind", style: whiteTextStyle),
+                                      SizedBox(width: 8),
+                                      Text("|", style: whiteTextStyle),
+                                      SizedBox(width: 8),
+                                      Text(
+                                          '${(weatherRealtimeData.windSpeed * 3.6).toStringAsFixed(1)} km/h',
+                                          style: whiteTextStyle),
+                                    ],
+                                  ),
+                                  SizedBox(height: 8),
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Image.asset(
+                                        Images.humidityIcon,
+                                        width: 24.w,
+                                        height: 24.h,
+                                      ),
+                                      Text("Hum", style: whiteTextStyle),
+                                      SizedBox(width: 8),
+                                      Text("|", style: whiteTextStyle),
+                                      SizedBox(width: 8),
+                                      Text('${weatherRealtimeData.humidity} %',
+                                          style: whiteTextStyle),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        );
+                      } else if (state is WeatherRealtimeError) {
+                        return const Center(
+                          child: Text(
+                            'Oops, something went wrong. Please try again later!',
+                            style: TextStyle(color: Colors.white),
                           ),
-                          Text(
-                            "Wind",
-                            style: whiteTextStyle,
-                          ),
-                          SizedBox(width: 8),
-                          Text(
-                            "|",
-                            style: whiteTextStyle,
-                          ),
-                          SizedBox(width: 8),
-                          Text(
-                            "10 km/h",
-                            style: whiteTextStyle,
-                          ),
-                        ],
-                      ),
-                      SizedBox(height: 8),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Image.asset(
-                            Images.humidityIcon,
-                            width: 24.w,
-                            height: 24.h,
-                          ),
-                          Text(
-                            "Hum",
-                            style: whiteTextStyle,
-                          ),
-                          SizedBox(width: 8),
-                          Text(
-                            "|",
-                            style: whiteTextStyle,
-                          ),
-                          SizedBox(width: 8),
-                          Text(
-                            "54%",
-                            style: whiteTextStyle,
-                          ),
-                        ],
-                      ),
-                    ],
+                        );
+                      }
+                      return const SizedBox();
+                    },
                   ),
                 ),
                 SizedBox(
@@ -187,7 +255,10 @@ class WeatherPageState extends State<WeatherPage> {
                   child: ElevatedButton(
                     onPressed: () {
                       Navigator.pushNamed(context, AppRoutes.weatherDetail,
-                          arguments: {'lon': -71.0466, 'lat': 42.3478});
+                          arguments: {
+                            'lon': _selectedLon,
+                            'lat': _selectedLat
+                          });
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.white,

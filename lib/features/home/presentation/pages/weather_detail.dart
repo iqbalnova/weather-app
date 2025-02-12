@@ -3,8 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get_it/get_it.dart';
+import 'package:intl/intl.dart';
 
 import '../../../../common/images.dart';
+import '../../../../common/utils.dart';
 import '../bloc/weather/weather_bloc.dart';
 import '../widgets/weather_daily_tile.dart';
 import '../widgets/weather_hourly_tile.dart';
@@ -98,7 +100,7 @@ class _WeatherDetailPageState extends State<WeatherDetailPage> {
                                   ),
                                 ),
                                 Text(
-                                  "Feb, 11",
+                                  DateFormat("MMM, d").format(DateTime.now()),
                                   style: TextStyle(
                                       fontSize: 16.sp, color: Colors.white70),
                                 ),
@@ -116,8 +118,10 @@ class _WeatherDetailPageState extends State<WeatherDetailPage> {
                                 final weather = weatherData.hourly[index];
                                 return WeatherHourlyTile(
                                   temperature: "${weather.values.temperature}°",
-                                  icon: Icons.wb_sunny,
-                                  time: weather.time.substring(11, 16),
+                                  iconUrl: getWeatherIcon(
+                                      weather.values.weatherCode),
+                                  time: DateFormatter.formatToLocalTime(
+                                      weather.time),
                                 );
                               },
                             ),
@@ -144,8 +148,9 @@ class _WeatherDetailPageState extends State<WeatherDetailPage> {
                               final weather = weatherData.daily[index];
                               return WeatherDailyTile(
                                 date: weather.time,
-                                icon: Icons.cloud,
                                 temperature: "${weather.values.temperature}°",
+                                iconUrl: getWeatherIcon(
+                                    weather.values.weatherCodeMax),
                               );
                             },
                           ),

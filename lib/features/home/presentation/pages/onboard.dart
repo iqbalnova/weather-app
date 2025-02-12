@@ -76,7 +76,7 @@ class OnboardPageState extends State<OnboardPage> {
                   width: double.infinity,
                   child: ElevatedButton(
                     onPressed: () {
-                      Navigator.pushNamed(context, AppRoutes.home);
+                      Navigator.pushReplacementNamed(context, AppRoutes.home);
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.white,

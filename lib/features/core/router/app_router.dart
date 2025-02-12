@@ -1,3 +1,4 @@
+import 'package:driweather/features/home/presentation/widgets/map_picker.dart';
 import 'package:flutter/material.dart';
 
 import '../../home/presentation/pages/onboard.dart';
@@ -27,7 +28,8 @@ class AppRouter {
                 lon: lon,
                 locator: di.locator,
               );
-
+            case AppRoutes.mapPicker:
+              return const MapPickerPage();
             default:
               return const Scaffold(
                 body: Center(

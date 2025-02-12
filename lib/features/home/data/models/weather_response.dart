@@ -18,7 +18,7 @@ class WeatherResponse extends Equatable {
     return WeatherResponse(
       hourly: List<HourlyWeatherModel>.from(
           (json['timelines']['hourly'] as List)
-              .take(4)
+              .take(24)
               .map((x) => HourlyWeatherModel.fromJson(x))),
       daily: (json['timelines']['daily'] as List?)
               ?.map((x) => DailyWeatherModel.fromJson(x))

@@ -1,8 +1,8 @@
 import 'package:dartz/dartz.dart';
 
 import '../../../../common/failure.dart';
-import '../../data/repositories/weather_repository_impl.dart';
 import '../entities/weather_entities.dart';
+import '../repositories/weather_repository.dart';
 
 class GetForecastByLocation {
   final WeatherRepository repository;

@@ -3,13 +3,13 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 class WeatherHourlyTile extends StatelessWidget {
   final String temperature;
-  final IconData icon;
+  final String iconUrl;
   final String time;
 
   const WeatherHourlyTile({
     super.key,
     required this.temperature,
-    required this.icon,
+    required this.iconUrl,
     required this.time,
   });
 
@@ -32,7 +32,14 @@ class WeatherHourlyTile extends StatelessWidget {
                   fontWeight: FontWeight.bold,
                   color: Colors.white)),
           SizedBox(height: 4.h),
-          Icon(icon, size: 28.w, color: Colors.white),
+          Image.asset(
+            iconUrl,
+            width: 50.w,
+            height: 50.w,
+            fit: BoxFit.cover,
+            errorBuilder: (context, error, stackTrace) =>
+                Icon(Icons.error, color: Colors.white, size: 28.w),
+          ),
           SizedBox(height: 4.h),
           Text(time, style: TextStyle(fontSize: 14.sp, color: Colors.white70)),
         ],

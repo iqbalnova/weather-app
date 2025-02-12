@@ -1,15 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
+import '../../../../common/utils.dart';
+
 class WeatherDailyTile extends StatelessWidget {
   final String date;
-  final IconData icon;
+  final String iconUrl;
   final String temperature;
 
   const WeatherDailyTile({
     super.key,
     required this.date,
-    required this.icon,
+    required this.iconUrl,
     required this.temperature,
   });
 
@@ -25,14 +27,25 @@ class WeatherDailyTile extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(date, style: TextStyle(fontSize: 16.sp, color: Colors.white)),
-          Icon(icon, size: 28.w, color: Colors.white),
+          Text(
+            DateFormatter.formatToShortDate(date),
+            style: TextStyle(fontSize: 16.sp, color: Colors.white),
+          ),
+          Image.asset(
+            iconUrl,
+            width: 60.w,
+            height: 60.w,
+            fit: BoxFit.cover,
+            errorBuilder: (context, error, stackTrace) =>
+                Icon(Icons.error, color: Colors.white, size: 28.w),
+          ),
           Text(
             temperature,
             style: TextStyle(
-                fontSize: 16.sp,
-                fontWeight: FontWeight.bold,
-                color: Colors.white),
+              fontSize: 16.sp,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+            ),
           ),
         ],
       ),
