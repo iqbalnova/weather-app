@@ -1,6 +1,8 @@
 import 'package:driweather/features/home/presentation/widgets/map_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../home/presentation/bloc/weather_realtime/weather_realtime_bloc.dart';
 import '../../home/presentation/pages/onboard.dart';
 import '../../home/presentation/pages/weather.dart';
 import '../../home/presentation/pages/weather_detail.dart';
@@ -16,7 +18,10 @@ class AppRouter {
             case AppRoutes.onboard:
               return const OnboardPage();
             case AppRoutes.home:
-              return const WeatherPage();
+              return BlocProvider(
+                create: (context) => di.locator<WeatherRealtimeBloc>(),
+                child: const WeatherPage(),
+              );
             case AppRoutes.weatherDetail:
               final Map<String, dynamic> arguments =
                   settings.arguments as Map<String, dynamic>;

@@ -45,12 +45,24 @@ class WeatherPageState extends State<WeatherPage> {
         _selectedLat = double.tryParse(lat) ?? _selectedLat;
         _selectedLon = double.tryParse(lon) ?? _selectedLon;
       });
+      if (mounted) {
+        context.read<WeatherRealtimeBloc>().add(
+              FetchWeatherRealtimeEvent(
+                  lat: double.tryParse(lat) ?? _selectedLat,
+                  lon: double.tryParse(lon) ?? _selectedLon),
+            );
+      }
     } else {
       setState(() {
         _selectedAddress = "Pick Location";
         _selectedLat = -7.5666;
         _selectedLon = 110.8167;
       });
+      if (mounted) {
+        context.read<WeatherRealtimeBloc>().add(
+              FetchWeatherRealtimeEvent(lat: -7.5666, lon: 110.8167),
+            );
+      }
     }
   }
 
@@ -132,8 +144,18 @@ class WeatherPageState extends State<WeatherPage> {
                           context, AppRoutes.mapPicker);
 
                       if (result is MapPickerResult) {
+                        if (context.mounted) {
+                          context.read<WeatherRealtimeBloc>().add(
+                                FetchWeatherRealtimeEvent(
+                                    lat: result.latLng.latitude,
+                                    lon: result.latLng.longitude),
+                              );
+                        }
+
                         setState(() {
                           _selectedAddress = result.address;
+                          _selectedLat = result.latLng.latitude;
+                          _selectedLon = result.latLng.longitude;
                         });
                       }
                     },
@@ -142,109 +164,104 @@ class WeatherPageState extends State<WeatherPage> {
                     hasNotification: true,
                   ),
                 ),
-                BlocProvider(
-                  create: (context) => locator<WeatherRealtimeBloc>()
-                    ..add(FetchWeatherRealtimeEvent(
-                        lat: _selectedLat, lon: _selectedLon)),
-                  child: BlocBuilder<WeatherRealtimeBloc, WeatherRealtimeState>(
-                    builder: (context, state) {
-                      if (state is WeatherRealtimeLoading) {
-                        return const Center(child: CircularProgressIndicator());
-                      } else if (state is WeatherRealtimeLoaded) {
-                        final weatherRealtimeData = state.weatherRealtime;
+                BlocBuilder<WeatherRealtimeBloc, WeatherRealtimeState>(
+                  builder: (context, state) {
+                    if (state is WeatherRealtimeLoading) {
+                      return const Center(child: CircularProgressIndicator());
+                    } else if (state is WeatherRealtimeLoaded) {
+                      final weatherRealtimeData = state.weatherRealtime;
 
-                        return Column(
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            Image.asset(
-                              getWeatherIcon(weatherRealtimeData.weatherCode),
-                              width: 300.w,
-                              fit: BoxFit.contain,
-                            ),
-                            Container(
-                              margin: EdgeInsets.symmetric(horizontal: 20),
-                              padding: EdgeInsets.symmetric(
-                                  horizontal: 16, vertical: 20),
-                              decoration: BoxDecoration(
-                                color: Colors.white.withValues(alpha: 0.3),
-                                borderRadius: BorderRadius.circular(10),
-                                border: Border.all(color: whiteColor),
-                              ),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.center,
-                                children: [
-                                  Text(
-                                    DateFormatter.formatToReadableDate(
-                                        weatherRealtimeData.time),
-                                    style: whiteTextStyle,
-                                  ),
-                                  SizedBox(height: 10),
-                                  Text(
-                                    '${weatherRealtimeData.temperature}°',
-                                    style: whiteTextStyle.copyWith(
-                                        fontSize: 60.sp,
-                                        fontWeight: FontWeight.w500),
-                                  ),
-                                  SizedBox(height: 10),
-                                  Text(
-                                    getWeatherDescription(
-                                        weatherCode:
-                                            weatherRealtimeData.weatherCode),
-                                    style: semiBoldStyle.copyWith(
-                                        color: whiteColor,
-                                        fontWeight: FontWeight.w700),
-                                  ),
-                                  SizedBox(height: 20),
-                                  Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Image.asset(
-                                        Images.windIcon,
-                                        width: 24.w,
-                                        height: 24.h,
-                                      ),
-                                      Text("Wind", style: whiteTextStyle),
-                                      SizedBox(width: 8),
-                                      Text("|", style: whiteTextStyle),
-                                      SizedBox(width: 8),
-                                      Text(
-                                          '${(weatherRealtimeData.windSpeed * 3.6).toStringAsFixed(1)} km/h',
-                                          style: whiteTextStyle),
-                                    ],
-                                  ),
-                                  SizedBox(height: 8),
-                                  Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Image.asset(
-                                        Images.humidityIcon,
-                                        width: 24.w,
-                                        height: 24.h,
-                                      ),
-                                      Text("Hum", style: whiteTextStyle),
-                                      SizedBox(width: 8),
-                                      Text("|", style: whiteTextStyle),
-                                      SizedBox(width: 8),
-                                      Text('${weatherRealtimeData.humidity} %',
-                                          style: whiteTextStyle),
-                                    ],
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        );
-                      } else if (state is WeatherRealtimeError) {
-                        return const Center(
-                          child: Text(
-                            'Oops, something went wrong. Please try again later!',
-                            style: TextStyle(color: Colors.white),
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Image.asset(
+                            getWeatherIcon(weatherRealtimeData.weatherCode),
+                            width: 300.w,
+                            fit: BoxFit.contain,
                           ),
-                        );
-                      }
-                      return const SizedBox();
-                    },
-                  ),
+                          Container(
+                            margin: EdgeInsets.symmetric(horizontal: 20),
+                            padding: EdgeInsets.symmetric(
+                                horizontal: 16, vertical: 20),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.3),
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(color: whiteColor),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              children: [
+                                Text(
+                                  DateFormatter.formatToReadableDate(
+                                      weatherRealtimeData.time),
+                                  style: whiteTextStyle,
+                                ),
+                                SizedBox(height: 10),
+                                Text(
+                                  '${weatherRealtimeData.temperature}°',
+                                  style: whiteTextStyle.copyWith(
+                                      fontSize: 60.sp,
+                                      fontWeight: FontWeight.w500),
+                                ),
+                                SizedBox(height: 10),
+                                Text(
+                                  getWeatherDescription(
+                                      weatherCode:
+                                          weatherRealtimeData.weatherCode),
+                                  style: semiBoldStyle.copyWith(
+                                      color: whiteColor,
+                                      fontWeight: FontWeight.w700),
+                                ),
+                                SizedBox(height: 20),
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Image.asset(
+                                      Images.windIcon,
+                                      width: 24.w,
+                                      height: 24.h,
+                                    ),
+                                    Text("Wind", style: whiteTextStyle),
+                                    SizedBox(width: 8),
+                                    Text("|", style: whiteTextStyle),
+                                    SizedBox(width: 8),
+                                    Text(
+                                        '${(weatherRealtimeData.windSpeed * 3.6).toStringAsFixed(1)} km/h',
+                                        style: whiteTextStyle),
+                                  ],
+                                ),
+                                SizedBox(height: 8),
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Image.asset(
+                                      Images.humidityIcon,
+                                      width: 24.w,
+                                      height: 24.h,
+                                    ),
+                                    Text("Hum", style: whiteTextStyle),
+                                    SizedBox(width: 8),
+                                    Text("|", style: whiteTextStyle),
+                                    SizedBox(width: 8),
+                                    Text('${weatherRealtimeData.humidity} %',
+                                        style: whiteTextStyle),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      );
+                    } else if (state is WeatherRealtimeError) {
+                      return const Center(
+                        child: Text(
+                          'Oops, something went wrong. Please try again later!',
+                          style: TextStyle(color: Colors.white),
+                        ),
+                      );
+                    }
+                    return const SizedBox();
+                  },
                 ),
                 SizedBox(
                   height: 20,
